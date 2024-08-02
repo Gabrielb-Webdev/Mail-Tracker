@@ -109,17 +109,18 @@ def verificar_correo_puede_recibir(email):
     domain = email.split('@')[1]
 
     try:
-        answers = dns.resolver.resolve(domain, 'MX')
+        answers = dns.resolver.resolve(domain, 'MX', lifetime=10)
         if len(answers) == 0:
             return False
     except Exception as e:
-        print(f"DNS error: {e}")
+        print(f"Error DNS: {e}")
         return False
 
     for answer in answers:
         mx_server = str(answer.exchange)
         try:
-            connection = smtplib.SMTP(mx_server, 25, timeout=10)
+            connection = smtplib.SMTP(mx_server, 25, timeout=5)
+            connection.set_debuglevel(1)  # Habilitar depuración para ver más detalles
             connection.ehlo()
             connection.mail('gabrielbg21@hotmail.com')
             code, message = connection.rcpt(email)
@@ -128,10 +129,11 @@ def verificar_correo_puede_recibir(email):
             if code in (250, 251):
                 return True
         except Exception as e:
-            print(f"SMTP error: {e}")
+            print(f"Error SMTP: {e}")
             continue
 
     return False
+
 
 if __name__ == '__main__':
     app.run(debug=True)
