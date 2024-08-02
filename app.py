@@ -6,7 +6,7 @@ import io
 import csv
 
 app = Flask(__name__)
-app.secret_key = 'some_random_secret_key'
+app.secret_key = 'ab3f4275a794ffeefd0bd464428cd894770692bb0ff127db2cb7c6c41dc85ecd'
 
 @app.route('/')
 def index():
