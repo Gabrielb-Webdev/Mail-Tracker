@@ -1,4 +1,3 @@
-import os
 from flask import Flask, request, jsonify, send_file, render_template, session
 import dns.resolver
 import smtplib
@@ -6,12 +5,14 @@ import io
 import csv
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default_fallback_key')
+app.secret_key = '0c12ab34f5d6789a12cd34ef56b78c90d12e345678f9ab12cd34ef56b78c90d1'
 
+# Ruta principal para el formulario
 @app.route('/')
 def index():
     return render_template('index.html')
 
+# Ruta para validar los correos electrónicos
 @app.route('/validate', methods=['POST'])
 def validate():
     name = request.form.get('name')
@@ -21,28 +22,30 @@ def validate():
     if not name or not surname or not domain:
         return jsonify({'error': 'Missing parameters'}), 400
 
-    try:
-        status = verificar_registros_mx(domain)
-        emails = generar_posibles_correos(name, surname, domain)
-        valid_email = verificar_correos_validos(emails)
+    # Verificar si el dominio tiene registros MX
+    status = verificar_registros_mx(domain)
 
-        data = {
-            'name': name,
-            'surname': surname,
-            'domain': domain,
-            'status': status,
-            'emails': emails,
-            'valid_email': valid_email
-        }
+    # Generar posibles correos electrónicos
+    emails = generar_posibles_correos(name, surname, domain)
 
-        session['csv_data'] = data
+    # Verificar cuál de los correos generados es válido y puede recibir correos
+    valid_email = verificar_correos_validos(emails)
 
-        return jsonify(data)
+    data = {
+        'name': name,
+        'surname': surname,
+        'domain': domain,
+        'status': status,
+        'emails': emails,
+        'valid_email': valid_email
+    }
 
-    except Exception as e:
-        print(f"Error during validation: {e}")
-        return jsonify({'error': 'Server error occurred'}), 500
+    # Guardar datos en sesión para generar CSV posteriormente
+    session['csv_data'] = data
 
+    return jsonify(data)
+
+# Ruta para descargar el CSV
 @app.route('/download_csv', methods=['GET'])
 def download_csv():
     if 'csv_data' not in session:
@@ -62,51 +65,49 @@ def download_csv():
 
 def verificar_registros_mx(domain):
     try:
-        # Asegúrate de establecer un timeout adecuado
-        answers = dns.resolver.resolve(domain, 'MX', lifetime=5)  
+        answers = dns.resolver.resolve(domain, 'MX', lifetime=5)  # Asegúrate de establecer un timeout
         if len(answers) > 0:
             return "valido"
         else:
             return "invalido"
     except Exception as e:
-        print(f"Error durante la consulta MX: {e}")
         return f"error: {str(e)}"
 
 def generar_posibles_correos(nombre, apellido, dominio):
     posibles_correos = [
+        f"{nombre}@{dominio}",
         f"{nombre}.{apellido}@{dominio}",
         f"{apellido}@{dominio}",
-        f"{nombre}@{dominio}",
         f"{nombre}{apellido}@{dominio}",
         f"{nombre[0]}{apellido}@{dominio}",
         f"{nombre}{apellido[0]}@{dominio}",
+        f"{nombre}_{apellido}@{dominio}",
+        f"{apellido}_{nombre}@{dominio}",
+        f"{nombre}-{apellido}@{dominio}",
+        f"{apellido}-{nombre}@{dominio}"
     ]
-    return posibles_correos
+    return posibles_correos[:10]
 
 def verificar_correos_validos(emails):
     for email in emails:
         if verificar_correo_puede_recibir(email):
-            return email
+            return email  # Retorna el primer correo electrónico válido que puede recibir correos
     return None
 
 def verificar_correo_puede_recibir(email):
     domain = email.split('@')[1]
 
     try:
-        # Establece un timeout para las consultas DNS
         answers = dns.resolver.resolve(domain, 'MX', lifetime=5)
         if len(answers) == 0:
             return False
     except Exception as e:
-        print(f"DNS error: {e}")
         return False
 
     for answer in answers:
         mx_server = str(answer.exchange)
         try:
-            # Establece un timeout para la conexión SMTP
-            connection = smtplib.SMTP(mx_server, 25, timeout=5)
-            connection.set_debuglevel(1)
+            connection = smtplib.SMTP(mx_server, 25, timeout=5)  # Ajusta el timeout
             connection.ehlo()
             connection.mail('gabrielbg21@hotmail.com')
             code, message = connection.rcpt(email)
@@ -115,7 +116,6 @@ def verificar_correo_puede_recibir(email):
             if code in (250, 251):
                 return True
         except Exception as e:
-            print(f"SMTP error: {e}")
             continue
 
     return False
