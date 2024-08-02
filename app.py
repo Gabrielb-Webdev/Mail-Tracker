@@ -75,11 +75,11 @@ def generar_posibles_correos(nombre, apellido, dominio):
     posibles_correos = []
 
     # Generar combinaciones básicas
+    posibles_correos.append(f"{nombre}@{dominio}")
     posibles_correos.append(f"{nombre}.{apellido}@{dominio}")
     posibles_correos.append(f"{apellido}@{dominio}")
     posibles_correos.append(f"{nombre}{apellido}@{dominio}")
     posibles_correos.append(f"{nombre[0]}{apellido}@{dominio}")
-    posibles_correos.append(f"{nombre}@{dominio}")
     posibles_correos.append(f"{nombre}{apellido[0]}@{dominio}")
     posibles_correos.append(f"{nombre}_{apellido}@{dominio}")
     posibles_correos.append(f"{apellido}_{nombre}@{dominio}")
