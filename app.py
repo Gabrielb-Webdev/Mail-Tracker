@@ -22,13 +22,8 @@ def validate():
         return jsonify({'error': 'Missing parameters'}), 400
 
     try:
-        # Verificar si el dominio tiene registros MX
         status = verificar_registros_mx(domain)
-
-        # Generar posibles correos electrónicos
         emails = generar_posibles_correos(name, surname, domain)
-
-        # Verificar cuál de los correos generados es válido y puede recibir correos
         valid_email = verificar_correos_validos(emails)
 
         data = {
@@ -40,7 +35,6 @@ def validate():
             'valid_email': valid_email
         }
 
-        # Guardar datos en sesión para generar CSV posteriormente
         session['csv_data'] = data
 
         return jsonify(data)
@@ -78,35 +72,37 @@ def verificar_registros_mx(domain):
         return f"error: {str(e)}"
 
 def generar_posibles_correos(nombre, apellido, dominio):
-    posibles_correos = []
+    posibles_correos = [
+        f"{nombre}@{dominio}",
+        f"{nombre}.{apellido}@{dominio}",
+        f"{apellido}@{dominio}",
+        f"{nombre}{apellido}@{dominio}",
+        f"{nombre[0]}{apellido}@{dominio}",
+        f"{nombre}{apellido[0]}@{dominio}",
+        f"{nombre}_{apellido}@{dominio}",
+        f"{apellido}_{nombre}@{dominio}",
+        f"{nombre}-{apellido}@{dominio}",
+        f"{apellido}-{nombre}@{dominio}"
+    ]
 
-    # Generar combinaciones básicas
-    posibles_correos.append(f"{nombre}@{dominio}")
-    posibles_correos.append(f"{nombre}.{apellido}@{dominio}")
-    posibles_correos.append(f"{apellido}@{dominio}")
-    posibles_correos.append(f"{nombre}{apellido}@{dominio}")
-    posibles_correos.append(f"{nombre[0]}{apellido}@{dominio}")
-    posibles_correos.append(f"{nombre}{apellido[0]}@{dominio}")
-    posibles_correos.append(f"{nombre}_{apellido}@{dominio}")
-    posibles_correos.append(f"{apellido}_{nombre}@{dominio}")
-    posibles_correos.append(f"{nombre}-{apellido}@{dominio}")
-    posibles_correos.append(f"{apellido}-{nombre}@{dominio}")
-
-    # Otras combinaciones posibles
     if len(nombre) >= 2:
-        posibles_correos.append(f"{nombre[0]}.{apellido}@{dominio}")
-        posibles_correos.append(f"{nombre}.{apellido[0]}@{dominio}")
+        posibles_correos.extend([
+            f"{nombre[0]}.{apellido}@{dominio}",
+            f"{nombre}.{apellido[0]}@{dominio}"
+        ])
 
     if len(apellido) >= 2:
-        posibles_correos.append(f"{nombre[0]}_{apellido}@{dominio}")
-        posibles_correos.append(f"{nombre}_{apellido[0]}@{dominio}")
+        posibles_correos.extend([
+            f"{nombre[0]}_{apellido}@{dominio}",
+            f"{nombre}_{apellido[0]}@{dominio}"
+        ])
 
-    return posibles_correos[:10]  # Limitar a los primeros 10 posibles correos
+    return posibles_correos[:10]
 
 def verificar_correos_validos(emails):
     for email in emails:
         if verificar_correo_puede_recibir(email):
-            return email  # Retorna el primer correo electrónico válido que puede recibir correos
+            return email
     return None
 
 def verificar_correo_puede_recibir(email):
