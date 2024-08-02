@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulario de Dominios</title>
     <style>
+        /* CSS aquí */
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
         }
-
         body {
             display: flex;
             justify-content: center;
@@ -19,7 +19,6 @@
             height: 100vh;
             background-color: #f4f4f9;
         }
-
         .container {
             background-color: #ffffff;
             padding: 20px;
@@ -28,24 +27,20 @@
             max-width: 400px;
             width: 100%;
         }
-
         form {
             display: flex;
             flex-direction: column;
         }
-
         label {
             margin-bottom: 8px;
             font-weight: bold;
         }
-
         input {
             padding: 10px;
             margin-bottom: 20px;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
-
         button {
             padding: 10px;
             background-color: #007bff;
@@ -55,11 +50,9 @@
             cursor: pointer;
             font-size: 16px;
         }
-
         button:hover {
             background-color: #0056b3;
         }
-
         /* Loader styles */
         .loader {
             display: none;
@@ -71,32 +64,26 @@
             animation: spin 1s linear infinite;
             margin: 0 auto;
         }
-
         @keyframes spin {
             0% {
                 transform: rotate(0deg);
             }
-
             100% {
                 transform: rotate(360deg);
             }
         }
-
         .result-list {
             margin-top: 20px;
             list-style: none;
             padding: 0;
         }
-
         .result-list li {
             margin-bottom: 10px;
         }
-
         .valid-email {
             color: green;
             font-weight: bold;
         }
-
         .invalid-email {
             color: red;
         }
@@ -125,9 +112,9 @@
             event.preventDefault();
             const formData = new FormData(event.target);
 
-            // Show loader
+            // Mostrar el loader
             document.getElementById('loader').style.display = 'block';
-            document.getElementById('result-list').innerHTML = ''; // Clear previous results
+            document.getElementById('result-list').innerHTML = ''; // Limpiar resultados previos
 
             fetch('validate.php', {
                 method: 'POST',
@@ -149,7 +136,7 @@
                         document.getElementById('download-csv').style.display = 'block';
                     }
 
-                    // Display email verification results
+                    // Mostrar resultados de verificación de correo electrónico
                     const resultList = document.getElementById('result-list');
                     data.emails.forEach(email => {
                         const li = document.createElement('li');

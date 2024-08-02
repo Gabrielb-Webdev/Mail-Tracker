@@ -66,9 +66,9 @@ function generar_posibles_correos($nombre, $apellido, $dominio) {
     $posibles_correos = [];
 
     // Generar combinaciones básicas
-    $posibles_correos[] = "$nombre@$dominio";
     $posibles_correos[] = "$nombre.$apellido@$dominio";
     $posibles_correos[] = "$apellido@$dominio";
+    $posibles_correos[] = "$nombre@$dominio";
     $posibles_correos[] = "$nombre$apellido@$dominio";
     $posibles_correos[] = $nombre[0] . "$apellido@$dominio";
     $posibles_correos[] = "$nombre" . $apellido[0] . "@$dominio";
