@@ -116,13 +116,13 @@ function verificar_correo_puede_recibir($email) {
     foreach ($records as $mx) {
         $mx_server = $mx['target'];
         try {
-            // Realizar conexión al servidor SMTP
-            $connection = fsockopen($mx_server, 25, $errno, $errstr, 10); // Aumentar el timeout a 10 segundos
+            // Usar stream_socket_client con tiempo de espera reducido
+            $connection = @stream_socket_client("tcp://$mx_server:25", $errno, $errstr, 5, STREAM_CLIENT_CONNECT, stream_context_create(['socket' => ['tcp_nodelay' => true]]));
             if (!$connection) {
                 continue;
             }
 
-            stream_set_timeout($connection, 10); // Ajustar timeout de lectura a 10 segundos
+            stream_set_timeout($connection, 5); // Ajustar timeout de lectura a 5 segundos
             $response = fgets($connection, 1024);
 
             fwrite($connection, "HELO example.com\r\n");
