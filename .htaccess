@@ -1,8 +1,0 @@
-# Habilitar la visualización de errores
-php_flag display_errors On
-php_value error_reporting 30719
-
-# Reescritura de URLs (opcional, si es necesario)
-RewriteEngine On
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^ index.php [QSA,L]
