@@ -1,14 +1,11 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Formulario de Dominios</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-
 <body>
     <div class="container">
         <form id="domain-form">
@@ -39,40 +36,40 @@
                 method: 'POST',
                 body: formData
             })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('loader').style.display = 'none';
+
+                if (data.status === "valido") {
+                    document.getElementById('download-csv').style.display = 'block';
+                }
+
+                // Display email verification results
+                const resultList = document.getElementById('result-list');
+                data.emails.forEach(email => {
+                    const li = document.createElement('li');
+                    if (email === data.valid_email) {
+                        li.textContent = `✔️ ${email} es válido y puede recibir correos.`;
+                        li.className = 'valid-email';
+                    } else {
+                        li.textContent = `❌ ${email} no es válido o no puede recibir correos.`;
+                        li.className = 'invalid-email';
                     }
-                    return response.json();
-                })
-                .then(data => {
-                    document.getElementById('loader').style.display = 'none';
-
-                    if (data.status === "valido") {
-                        document.getElementById('download-csv').style.display = 'block';
-                    }
-
-                    // Display email verification results
-                    const resultList = document.getElementById('result-list');
-                    data.emails.forEach(email => {
-                        const li = document.createElement('li');
-                        if (email === data.valid_email) {
-                            li.textContent = `✔️ ${email} es válido y puede recibir correos.`;
-                            li.className = 'valid-email';
-                        } else {
-                            li.textContent = `❌ ${email} no es válido o no puede recibir correos.`;
-                            li.className = 'invalid-email';
-                        }
-                        resultList.appendChild(li);
-                    });
-
-                    alert(`Dominio: ${data.status}\nPosibles correos: ${data.emails.join(', ')}\nCorreo válido: ${data.valid_email || 'Ninguno'}`);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    document.getElementById('loader').style.display = 'none';
-                    alert('Error al verificar los correos: ' + error.message);
+                    resultList.appendChild(li);
                 });
+
+                alert(`Dominio: ${data.status}\nPosibles correos: ${data.emails.join(', ')}\nCorreo válido: ${data.valid_email || 'Ninguno'}`);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loader').style.display = 'none';
+                alert('Error al verificar los correos: ' + error.message);
+            });
         });
 
         document.getElementById('download-csv').addEventListener('click', function () {
@@ -80,5 +77,4 @@
         });
     </script>
 </body>
-
 </html>

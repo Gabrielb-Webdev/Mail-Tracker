@@ -62,42 +62,26 @@ def download_csv():
 
 def verificar_registros_mx(domain):
     try:
-        answers = dns.resolver.resolve(domain, 'MX')
+        # Asegúrate de establecer un timeout adecuado
+        answers = dns.resolver.resolve(domain, 'MX', lifetime=5)  
         if len(answers) > 0:
             return "valido"
         else:
             return "invalido"
     except Exception as e:
-        print(f"Error during MX lookup: {e}")
+        print(f"Error durante la consulta MX: {e}")
         return f"error: {str(e)}"
 
 def generar_posibles_correos(nombre, apellido, dominio):
     posibles_correos = [
-        f"{nombre}@{dominio}",
         f"{nombre}.{apellido}@{dominio}",
         f"{apellido}@{dominio}",
+        f"{nombre}@{dominio}",
         f"{nombre}{apellido}@{dominio}",
         f"{nombre[0]}{apellido}@{dominio}",
         f"{nombre}{apellido[0]}@{dominio}",
-        f"{nombre}_{apellido}@{dominio}",
-        f"{apellido}_{nombre}@{dominio}",
-        f"{nombre}-{apellido}@{dominio}",
-        f"{apellido}-{nombre}@{dominio}"
     ]
-
-    if len(nombre) >= 2:
-        posibles_correos.extend([
-            f"{nombre[0]}.{apellido}@{dominio}",
-            f"{nombre}.{apellido[0]}@{dominio}"
-        ])
-
-    if len(apellido) >= 2:
-        posibles_correos.extend([
-            f"{nombre[0]}_{apellido}@{dominio}",
-            f"{nombre}_{apellido[0]}@{dominio}"
-        ])
-
-    return posibles_correos[:10]
+    return posibles_correos
 
 def verificar_correos_validos(emails):
     for email in emails:
@@ -109,18 +93,20 @@ def verificar_correo_puede_recibir(email):
     domain = email.split('@')[1]
 
     try:
-        answers = dns.resolver.resolve(domain, 'MX', lifetime=10)
+        # Establece un timeout para las consultas DNS
+        answers = dns.resolver.resolve(domain, 'MX', lifetime=5)
         if len(answers) == 0:
             return False
     except Exception as e:
-        print(f"Error DNS: {e}")
+        print(f"DNS error: {e}")
         return False
 
     for answer in answers:
         mx_server = str(answer.exchange)
         try:
+            # Establece un timeout para la conexión SMTP
             connection = smtplib.SMTP(mx_server, 25, timeout=5)
-            connection.set_debuglevel(1)  # Habilitar depuración para ver más detalles
+            connection.set_debuglevel(1)
             connection.ehlo()
             connection.mail('gabrielbg21@hotmail.com')
             code, message = connection.rcpt(email)
@@ -129,11 +115,10 @@ def verificar_correo_puede_recibir(email):
             if code in (250, 251):
                 return True
         except Exception as e:
-            print(f"Error SMTP: {e}")
+            print(f"SMTP error: {e}")
             continue
 
     return False
-
 
 if __name__ == '__main__':
     app.run(debug=True)
