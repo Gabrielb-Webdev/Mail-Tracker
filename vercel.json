@@ -1,19 +1,9 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "validate.php",
-      "use": "@vercel/php"
-    },
-    {
-      "src": "validador.php",
-      "use": "@vercel/php"
-    }
-  ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/validador.php"
+      "dest": "validador.php"
     }
   ]
 }
