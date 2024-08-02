@@ -3,11 +3,11 @@
   "builds": [
     {
       "src": "validador.php",
-      "use": "@vercel/php"
+      "use": "@vercel/php@0.6.0"
     },
     {
       "src": "validate.php",
-      "use": "@vercel/php"
+      "use": "@vercel/php@0.6.0"
     }
   ],
   "routes": [
