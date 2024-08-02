@@ -27,12 +27,12 @@
         document.getElementById('domain-form').addEventListener('submit', function (event) {
             event.preventDefault();
             const formData = new FormData(event.target);
-
+    
             // Show loader
             document.getElementById('loader').style.display = 'block';
             document.getElementById('result-list').innerHTML = ''; // Clear previous results
-
-            fetch('/validate', {
+    
+            fetch('/validate', {  // Asegúrate de que esta ruta esté bien definida
                 method: 'POST',
                 body: formData
             })
@@ -44,11 +44,11 @@
             })
             .then(data => {
                 document.getElementById('loader').style.display = 'none';
-
+    
                 if (data.status === "valido") {
                     document.getElementById('download-csv').style.display = 'block';
                 }
-
+    
                 // Display email verification results
                 const resultList = document.getElementById('result-list');
                 data.emails.forEach(email => {
@@ -62,7 +62,7 @@
                     }
                     resultList.appendChild(li);
                 });
-
+    
                 alert(`Dominio: ${data.status}\nPosibles correos: ${data.emails.join(', ')}\nCorreo válido: ${data.valid_email || 'Ninguno'}`);
             })
             .catch(error => {
@@ -71,10 +71,11 @@
                 alert('Error al verificar los correos: ' + error.message);
             });
         });
-
+    
         document.getElementById('download-csv').addEventListener('click', function () {
             window.location.href = '/download_csv';
         });
     </script>
+    
 </body>
 </html>
