@@ -7,12 +7,10 @@ import csv
 app = Flask(__name__)
 app.secret_key = '0c12ab34f5d6789a12cd34ef56b78c90d12e345678f9ab12cd34ef56b78c90d1'
 
-# Ruta principal para el formulario
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# Ruta para validar los correos electrónicos
 @app.route('/validate', methods=['POST'])
 def validate():
     name = request.form.get('name')
@@ -22,13 +20,8 @@ def validate():
     if not name or not surname or not domain:
         return jsonify({'error': 'Missing parameters'}), 400
 
-    # Verificar si el dominio tiene registros MX
     status = verificar_registros_mx(domain)
-
-    # Generar posibles correos electrónicos
     emails = generar_posibles_correos(name, surname, domain)
-
-    # Verificar cuál de los correos generados es válido y puede recibir correos
     valid_email = verificar_correos_validos(emails)
 
     data = {
@@ -40,12 +33,9 @@ def validate():
         'valid_email': valid_email
     }
 
-    # Guardar datos en sesión para generar CSV posteriormente
     session['csv_data'] = data
-
     return jsonify(data)
 
-# Ruta para descargar el CSV
 @app.route('/download_csv', methods=['GET'])
 def download_csv():
     if 'csv_data' not in session:
@@ -65,7 +55,7 @@ def download_csv():
 
 def verificar_registros_mx(domain):
     try:
-        answers = dns.resolver.resolve(domain, 'MX', lifetime=5)  # Asegúrate de establecer un timeout
+        answers = dns.resolver.resolve(domain, 'MX', lifetime=5)
         if len(answers) > 0:
             return "valido"
         else:
@@ -91,7 +81,7 @@ def generar_posibles_correos(nombre, apellido, dominio):
 def verificar_correos_validos(emails):
     for email in emails:
         if verificar_correo_puede_recibir(email):
-            return email  # Retorna el primer correo electrónico válido que puede recibir correos
+            return email
     return None
 
 def verificar_correo_puede_recibir(email):
@@ -107,7 +97,7 @@ def verificar_correo_puede_recibir(email):
     for answer in answers:
         mx_server = str(answer.exchange)
         try:
-            connection = smtplib.SMTP(mx_server, 25, timeout=5)  # Ajusta el timeout
+            connection = smtplib.SMTP(mx_server, 25, timeout=5)
             connection.ehlo()
             connection.mail('gabrielbg21@hotmail.com')
             code, message = connection.rcpt(email)
@@ -119,6 +109,3 @@ def verificar_correo_puede_recibir(email):
             continue
 
     return False
-
-if __name__ == '__main__':
-    app.run(debug=True)
