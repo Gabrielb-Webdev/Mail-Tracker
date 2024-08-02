@@ -3,7 +3,7 @@
     "builds": [
       {
         "src": "validador.php",
-        "use": "@vercel/php"
+        "use": "@vercel/static-build"
       },
       {
         "src": "validate.php",
