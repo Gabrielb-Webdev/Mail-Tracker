@@ -6,8 +6,6 @@ import io
 import csv
 
 app = Flask(__name__)
-
-# Configura la secret_key usando una variable de entorno
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default_fallback_key')
 
 @app.route('/')
@@ -23,28 +21,33 @@ def validate():
     if not name or not surname or not domain:
         return jsonify({'error': 'Missing parameters'}), 400
 
-    # Verificar si el dominio tiene registros MX
-    status = verificar_registros_mx(domain)
+    try:
+        # Verificar si el dominio tiene registros MX
+        status = verificar_registros_mx(domain)
 
-    # Generar posibles correos electrónicos
-    emails = generar_posibles_correos(name, surname, domain)
+        # Generar posibles correos electrónicos
+        emails = generar_posibles_correos(name, surname, domain)
 
-    # Verificar cuál de los correos generados es válido y puede recibir correos
-    valid_email = verificar_correos_validos(emails)
+        # Verificar cuál de los correos generados es válido y puede recibir correos
+        valid_email = verificar_correos_validos(emails)
 
-    data = {
-        'name': name,
-        'surname': surname,
-        'domain': domain,
-        'status': status,
-        'emails': emails,
-        'valid_email': valid_email
-    }
+        data = {
+            'name': name,
+            'surname': surname,
+            'domain': domain,
+            'status': status,
+            'emails': emails,
+            'valid_email': valid_email
+        }
 
-    # Guardar datos en sesión para generar CSV posteriormente
-    session['csv_data'] = data
+        # Guardar datos en sesión para generar CSV posteriormente
+        session['csv_data'] = data
 
-    return jsonify(data)
+        return jsonify(data)
+
+    except Exception as e:
+        print(f"Error during validation: {e}")
+        return jsonify({'error': 'Server error occurred'}), 500
 
 @app.route('/download_csv', methods=['GET'])
 def download_csv():
@@ -71,6 +74,7 @@ def verificar_registros_mx(domain):
         else:
             return "invalido"
     except Exception as e:
+        print(f"Error during MX lookup: {e}")
         return f"error: {str(e)}"
 
 def generar_posibles_correos(nombre, apellido, dominio):
@@ -108,15 +112,14 @@ def verificar_correos_validos(emails):
 def verificar_correo_puede_recibir(email):
     domain = email.split('@')[1]
 
-    # Verificar si el dominio tiene registros MX
     try:
         answers = dns.resolver.resolve(domain, 'MX')
         if len(answers) == 0:
             return False
     except Exception as e:
+        print(f"DNS error: {e}")
         return False
 
-    # Intentar conectarse al servidor SMTP del dominio
     for answer in answers:
         mx_server = str(answer.exchange)
         try:
@@ -129,6 +132,7 @@ def verificar_correo_puede_recibir(email):
             if code in (250, 251):
                 return True
         except Exception as e:
+            print(f"SMTP error: {e}")
             continue
 
     return False
