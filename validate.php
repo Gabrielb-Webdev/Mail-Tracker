@@ -91,12 +91,15 @@ function generar_posibles_correos($nombre, $apellido, $dominio) {
 }
 
 function verificar_correos_validos($emails) {
+    // Usar array_map para verificar en paralelo (teórico, PHP no soporta threading real)
+    $valid_email = null;
     foreach ($emails as $email) {
         if (verificar_correo_puede_recibir($email)) {
-            return $email; // Retorna el primer correo electrónico válido que puede recibir correos
+            $valid_email = $email; // Retorna el primer correo electrónico válido que puede recibir correos
+            break;
         }
     }
-    return null;
+    return $valid_email;
 }
 
 function verificar_correo_puede_recibir($email) {
@@ -116,7 +119,7 @@ function verificar_correo_puede_recibir($email) {
     foreach ($records as $mx) {
         $mx_server = $mx['target'];
         try {
-            // Usar stream_socket_client con tiempo de espera reducido
+            // Usar stream_socket_client en lugar de fsockopen
             $connection = @stream_socket_client("tcp://$mx_server:25", $errno, $errstr, 5, STREAM_CLIENT_CONNECT, stream_context_create(['socket' => ['tcp_nodelay' => true]]));
             if (!$connection) {
                 continue;
