@@ -2,17 +2,14 @@ import os
 from flask import Flask, request, jsonify, send_file, render_template, session
 import dns.resolver
 import smtplib
-from email.mime.text import MIMEText
 import io
 import csv
 
-# Inicializa la aplicación Flask
 app = Flask(__name__)
 
 # Configura la secret_key usando una variable de entorno
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'default_fallback_key')
 
-# Rutas y lógica de tu aplicación
 @app.route('/')
 def index():
     return render_template('index.html')
