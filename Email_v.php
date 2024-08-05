@@ -52,21 +52,54 @@ function verificar_correo_puede_recibir($email) {
     foreach ($records as $mx) {
         $mx_server = $mx['target'];
         try {
-            // Conexión al servidor SMTP
-            $connection = @fsockopen($mx_server, 25, $errno, $errstr, 10);
+            // Usar el puerto 587 para conexiones seguras
+            $connection = @stream_socket_client("tcp://$mx_server:587", $errno, $errstr, 20);
             if (!$connection) {
+                // Si falla, intentar con el puerto 25
+                $connection = @stream_socket_client("tcp://$mx_server:25", $errno, $errstr, 20);
+            }
+
+            if (!$connection) {
+                continue; // No se pudo conectar al servidor SMTP
+            }
+
+            stream_set_timeout($connection, 20);
+            $response = fgets($connection, 1024);
+            if (strpos($response, '220') === false) {
+                fclose($connection);
                 continue;
             }
 
-            stream_set_timeout($connection, 10);
+            // Enviar comando EHLO
+            fwrite($connection, "EHLO example.com\r\n");
             $response = fgets($connection, 1024);
+            if (strpos($response, '250') === false) {
+                fclose($connection);
+                continue;
+            }
 
-            fwrite($connection, "HELO example.com\r\n");
+            // Intentar iniciar STARTTLS para conexiones seguras
+            fwrite($connection, "STARTTLS\r\n");
             $response = fgets($connection, 1024);
+            if (strpos($response, '220') === false) {
+                fclose($connection);
+                continue;
+            }
 
+            // Habilitar TLS
+            stream_socket_enable_crypto($connection, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+
+            // Repetir EHLO después de habilitar STARTTLS
+            fwrite($connection, "EHLO example.com\r\n");
+            $response = fgets($connection, 1024);
+            if (strpos($response, '250') === false) {
+                fclose($connection);
+                continue;
+            }
+
+            // Simular el proceso de envío de correo
             fwrite($connection, "MAIL FROM:<Gabrielbg21@hotmail.com>\r\n");
             $response = fgets($connection, 1024);
-
             fwrite($connection, "RCPT TO:<$email>\r\n");
             $response = fgets($connection, 1024);
 
