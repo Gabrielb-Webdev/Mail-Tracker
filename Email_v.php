@@ -73,7 +73,7 @@ function verificar_correo_puede_recibir($email) {
             fwrite($connection, "EHLO example.com\r\n");
             $response = fgets($connection, 1024);
 
-            fwrite($connection, "MAIL FROM:<noreply@example.com>\r\n");
+            fwrite($connection, "MAIL FROM:<Gabrielbg21@hotmail.com>\r\n");
             $response = fgets($connection, 1024);
 
             fwrite($connection, "RCPT TO:<$email>\r\n");
