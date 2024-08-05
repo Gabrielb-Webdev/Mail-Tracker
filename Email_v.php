@@ -52,47 +52,19 @@ function verificar_correo_puede_recibir($email) {
     foreach ($records as $mx) {
         $mx_server = $mx['target'];
         try {
-            // Usar el puerto 587 para conexión segura
-            $connection = @stream_socket_client("tcp://$mx_server:587", $errno, $errstr, 30);
+            // Usar stream_socket_client en lugar de fsockopen
+            $connection = @stream_socket_client("tcp://$mx_server:25", $errno, $errstr, 20);
+
             if (!$connection) {
                 continue;
             }
 
-            stream_set_timeout($connection, 30);
+            stream_set_timeout($connection, 20);
             $response = fgets($connection, 1024);
-            if (strpos($response, '220') === false) {
-                fclose($connection);
-                continue;
-            }
 
-            // Enviar comando EHLO para iniciar una conexión segura
-            fwrite($connection, "EHLO mydomain.com\r\n");
+            fwrite($connection, "HELO example.com\r\n");
             $response = fgets($connection, 1024);
-            if (strpos($response, '250') === false) {
-                fclose($connection);
-                continue;
-            }
 
-            // Iniciar STARTTLS
-            fwrite($connection, "STARTTLS\r\n");
-            $response = fgets($connection, 1024);
-            if (strpos($response, '220') === false) {
-                fclose($connection);
-                continue;
-            }
-
-            // Hacer la conexión segura
-            stream_socket_enable_crypto($connection, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
-
-            // Repetir EHLO después de habilitar STARTTLS
-            fwrite($connection, "EHLO mydomain.com\r\n");
-            $response = fgets($connection, 1024);
-            if (strpos($response, '250') === false) {
-                fclose($connection);
-                continue;
-            }
-
-            // Simular el proceso de envío de correo
             fwrite($connection, "MAIL FROM:<Gabrielbg21@hotmail.com>\r\n");
             $response = fgets($connection, 1024);
 
