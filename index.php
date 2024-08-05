@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Validador de Correos Electrónicos</title>
+    <title>Validador de Correos Electrónicos y Dominios</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,7 +12,7 @@
             text-align: center;
         }
 
-        input[type="email"] {
+        input[type="email"], input[type="text"] {
             width: 80%;
             padding: 10px;
             margin: 10px 0;
@@ -33,22 +33,39 @@
             background-color: #cccccc;
         }
 
-        #loader {
+        #loader, #domain-loader {
             display: none;
             margin: 10px;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
         }
     </style>
 </head>
 <body>
     <h1>Validador de Correos Electrónicos</h1>
-    <form id="emailForm">
-        <input type="email" id="email" placeholder="Ingrese el correo electrónico" required>
-        <button type="submit">Validar</button>
-    </form>
-    <div id="loader">Verificando...</div>
-    <div id="result"></div>
+    <div class="form-section">
+        <form id="emailForm">
+            <input type="email" id="email" placeholder="Ingrese el correo electrónico" required>
+            <button type="submit">Validar</button>
+        </form>
+        <div id="loader">Verificando...</div>
+        <div id="result"></div>
+    </div>
+
+    <h1>Validador de Dominio</h1>
+    <div class="form-section">
+        <form id="domainForm">
+            <input type="text" id="domain" placeholder="Ingrese el dominio (ej: example.com)" required>
+            <button type="submit">Validar Dominio</button>
+        </form>
+        <div id="domain-loader">Verificando dominio...</div>
+        <div id="domain-result"></div>
+    </div>
 
     <script>
+        // Validación de correo electrónico
         document.getElementById('emailForm').addEventListener('submit', function (e) {
             e.preventDefault();
 
@@ -75,6 +92,43 @@
             .catch(error => {
                 loader.style.display = 'none';
                 resultDiv.innerHTML = 'Ocurrió un error en la validación.';
+                console.error('Error:', error);
+            });
+        });
+
+        // Validación de dominio
+        document.getElementById('domainForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const domain = document.getElementById('domain').value;
+            const loader = document.getElementById('domain-loader');
+            const resultDiv = document.getElementById('domain-result');
+
+            // Mostrar el loader
+            loader.style.display = 'block';
+            resultDiv.innerHTML = ''; // Limpiar resultado previo
+
+            fetch('Domain_v.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'domain=' + encodeURIComponent(domain),
+            })
+            .then(response => response.json())
+            .then(data => {
+                loader.style.display = 'none'; // Ocultar el loader
+                if (data.error) {
+                    resultDiv.innerHTML = data.error;
+                } else if (data.exists) {
+                    resultDiv.innerHTML = `El dominio existe: <a href="http://${domain}" target="_blank">${domain}</a>`;
+                } else {
+                    resultDiv.innerHTML = 'El dominio no existe o no es accesible.';
+                }
+            })
+            .catch(error => {
+                loader.style.display = 'none';
+                resultDiv.innerHTML = 'Ocurrió un error en la validación del dominio.';
                 console.error('Error:', error);
             });
         });
