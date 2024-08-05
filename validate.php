@@ -3,10 +3,6 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
-// Habilitar el registro de errores y especificar el archivo de log
-ini_set('log_errors', 1);
-ini_set('error_log', '/tmp/php-error.log');
-
 // CORS headers
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
@@ -95,6 +91,7 @@ function generar_posibles_correos($nombre, $apellido, $dominio) {
 }
 
 function verificar_correos_validos($emails) {
+    // Usar array_map para verificar en paralelo (teórico, PHP no soporta threading real)
     $valid_email = null;
     foreach ($emails as $email) {
         if (verificar_correo_puede_recibir($email)) {
@@ -107,16 +104,14 @@ function verificar_correos_validos($emails) {
 
 function verificar_correo_puede_recibir($email) {
     $domain = substr(strrchr($email, "@"), 1);
-    error_log("Verificando registros MX para $domain");
 
+    // Verificar si el dominio tiene registros MX
     try {
         $records = dns_get_record($domain, DNS_MX);
         if ($records === false || count($records) == 0) {
-            error_log("No se encontraron registros MX para $domain");
             return false;
         }
     } catch (Exception $e) {
-        error_log("Error al obtener registros MX: " . $e->getMessage());
         return false;
     }
 
@@ -124,20 +119,26 @@ function verificar_correo_puede_recibir($email) {
     foreach ($records as $mx) {
         $mx_server = $mx['target'];
         try {
-            // Usar stream_socket_client con puertos alternativos
-            $connection = @stream_socket_client("tcp://$mx_server:587", $errno, $errstr, 5, STREAM_CLIENT_CONNECT, stream_context_create(['socket' => ['tcp_nodelay' => true]]));
+            // Usar stream_socket_client con tiempo de espera reducido y contexto
+            $context = stream_context_create([
+                'socket' => [
+                    'tcp_nodelay' => true, // Deshabilitar Nagle's algorithm
+                    'so_timeout' => 3 // Timeout más bajo para conexiones lentas
+                ]
+            ]);
+
+            $connection = @stream_socket_client("tcp://$mx_server:25", $errno, $errstr, 3, STREAM_CLIENT_CONNECT, $context);
             if (!$connection) {
-                error_log("No se pudo conectar al servidor MX: $mx_server");
                 continue;
             }
 
-            stream_set_timeout($connection, 5); // Ajustar timeout de lectura a 5 segundos
+            stream_set_timeout($connection, 3); // Timeout de lectura reducido
             $response = fgets($connection, 1024);
 
             fwrite($connection, "HELO example.com\r\n");
             $response = fgets($connection, 1024);
 
-            fwrite($connection, "MAIL FROM:<example@example.com>\r\n");
+            fwrite($connection, "MAIL FROM:<Gabrielbg21@hotmail.com>\r\n");
             $response = fgets($connection, 1024);
 
             fwrite($connection, "RCPT TO:<$email>\r\n");
@@ -148,11 +149,9 @@ function verificar_correo_puede_recibir($email) {
 
             // Verificar respuesta del servidor SMTP para saber si el correo es válido
             if (strpos($response, '250') !== false || strpos($response, '251') !== false) {
-                error_log("Correo válido: $email");
                 return true;
             }
         } catch (Exception $e) {
-            error_log("Error al conectar con el servidor SMTP: " . $e->getMessage());
             continue;
         }
     }
@@ -181,3 +180,4 @@ if (isset($_GET['action']) && $_GET['action'] === 'download_csv') {
         echo "No hay datos para descargar.";
     }
 }
+?>
