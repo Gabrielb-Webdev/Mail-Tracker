@@ -48,12 +48,20 @@ function verificar_correo_puede_recibir($email) {
         return false;
     }
 
-    // Intentar conectarse al servidor SMTP del dominio
+    // Intentar conectarse al servidor SMTP del dominio usando TLS
     foreach ($records as $mx) {
         $mx_server = $mx['target'];
         try {
-            // Usar stream_socket_client en lugar de fsockopen
-            $connection = @stream_socket_client("tcp://$mx_server:25", $errno, $errstr, 20);
+            // Conexión segura al servidor SMTP usando TLS en el puerto 587
+            $contextOptions = [
+                'ssl' => [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true
+                ],
+            ];
+            $context = stream_context_create($contextOptions);
+            $connection = @stream_socket_client("tls://$mx_server:587", $errno, $errstr, 20, STREAM_CLIENT_CONNECT, $context);
 
             if (!$connection) {
                 continue;
@@ -62,10 +70,10 @@ function verificar_correo_puede_recibir($email) {
             stream_set_timeout($connection, 20);
             $response = fgets($connection, 1024);
 
-            fwrite($connection, "HELO example.com\r\n");
+            fwrite($connection, "EHLO example.com\r\n");
             $response = fgets($connection, 1024);
 
-            fwrite($connection, "MAIL FROM:<Gabrielbg21@hotmail.com>\r\n");
+            fwrite($connection, "MAIL FROM:<noreply@example.com>\r\n");
             $response = fgets($connection, 1024);
 
             fwrite($connection, "RCPT TO:<$email>\r\n");
