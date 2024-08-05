@@ -52,8 +52,8 @@ function verificar_correo_puede_recibir($email) {
     foreach ($records as $mx) {
         $mx_server = $mx['target'];
         try {
-            // Conexión al servidor SMTP
-            $connection = @fsockopen($mx_server, 25, $errno, $errstr, 10);
+            // Usar stream_socket_client en lugar de fsockopen
+            $connection = @stream_socket_client("tcp://$mx_server:25", $errno, $errstr, 10);
             if (!$connection) {
                 continue;
             }
@@ -64,7 +64,7 @@ function verificar_correo_puede_recibir($email) {
             fwrite($connection, "HELO example.com\r\n");
             $response = fgets($connection, 1024);
 
-            fwrite($connection, "MAIL FROM:<Gabrielbg21@hotmail.com>\r\n");
+            fwrite($connection, "MAIL FROM:<noreply@example.com>\r\n");
             $response = fgets($connection, 1024);
 
             fwrite($connection, "RCPT TO:<$email>\r\n");
@@ -84,4 +84,3 @@ function verificar_correo_puede_recibir($email) {
 
     return false;
 }
-?>
