@@ -53,12 +53,13 @@ function verificar_correo_puede_recibir($email) {
         $mx_server = $mx['target'];
         try {
             // Usar stream_socket_client en lugar de fsockopen
-            $connection = @stream_socket_client("tcp://$mx_server:25", $errno, $errstr, 10);
+            $connection = @stream_socket_client("tcp://$mx_server:25", $errno, $errstr, 20);
+
             if (!$connection) {
                 continue;
             }
 
-            stream_set_timeout($connection, 10);
+            stream_set_timeout($connection, 20);
             $response = fgets($connection, 1024);
 
             fwrite($connection, "HELO example.com\r\n");
@@ -84,3 +85,4 @@ function verificar_correo_puede_recibir($email) {
 
     return false;
 }
+?>
