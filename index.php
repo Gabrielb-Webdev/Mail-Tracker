@@ -121,7 +121,7 @@
                 if (data.error) {
                     resultDiv.innerHTML = data.error;
                 } else if (data.exists) {
-                    resultDiv.innerHTML = `El dominio existe: <a href="http://${domain}" target="_blank">${domain}</a>`;
+                    resultDiv.innerHTML = `El dominio existe: <a href="${data.url}" target="_blank">${data.url}</a>`;
                 } else {
                     resultDiv.innerHTML = 'El dominio no existe o no es accesible.';
                 }

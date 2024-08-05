@@ -16,15 +16,17 @@ try {
             throw new Exception('El dominio es requerido.');
         }
 
-        // Eliminar posibles esquemas como 'http://' o 'https://'
+        // Eliminar esquemas como 'http://' o 'https://'
         $domain = preg_replace('/^https?:\/\//', '', $domain);
+        $domain = rtrim($domain, '/');
 
-        // Verificar si el dominio existe
+        // Verificar si el dominio es válido
         $isValid = verificar_dominio_existe($domain);
 
         echo json_encode([
             'domain' => $domain,
             'exists' => $isValid,
+            'url' => $isValid ? 'http://' . $domain : null,
         ]);
     } else {
         echo json_encode(['error' => 'Método de solicitud no válido']);
@@ -34,23 +36,35 @@ try {
 }
 
 function verificar_dominio_existe($domain) {
-    // Intentar obtener la dirección IP del dominio
+    // Verificar si el dominio tiene una dirección IP válida
     $ip = gethostbyname($domain);
     if ($ip === $domain) {
-        return false; // No se pudo resolver el dominio
+        return false; // No se pudo resolver el dominio a una dirección IP
     }
 
-    // Verificar si el dominio tiene registros A o CNAME
+    // Verificar si el dominio tiene registros DNS válidos
     try {
-        $recordsA = dns_get_record($domain, DNS_A);
-        $recordsCNAME = dns_get_record($domain, DNS_CNAME);
-        if (count($recordsA) > 0 || count($recordsCNAME) > 0) {
-            return true; // El dominio existe y es accesible
+        $records = dns_get_record($domain, DNS_ANY);
+        if (count($records) > 0) {
+            // Hacer una solicitud HTTP para confirmar si el dominio es accesible
+            $url = 'http://' . $domain;
+            $headers = @get_headers($url);
+
+            if ($headers && strpos($headers[0], '200') !== false) {
+                return true; // Dominio válido y accesible
+            } else {
+                // Intentar con HTTPS
+                $url = 'https://' . $domain;
+                $headers = @get_headers($url);
+                if ($headers && strpos($headers[0], '200') !== false) {
+                    return true; // Dominio válido y accesible con HTTPS
+                }
+            }
         }
     } catch (Exception $e) {
         return false; // Error al obtener registros DNS
     }
 
-    return false; // No se encontraron registros DNS válidos
+    return false; // No se encontraron registros DNS válidos o el dominio no es accesible
 }
 ?>
