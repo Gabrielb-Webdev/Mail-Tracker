@@ -49,8 +49,7 @@ try {
     echo json_encode(['error' => $e->getMessage()]);
 }
 
-function verificar_registros_mx($domain)
-{
+function verificar_registros_mx($domain) {
     try {
         $records = dns_get_record($domain, DNS_MX);
         if ($records !== false && count($records) > 0) {
@@ -63,8 +62,7 @@ function verificar_registros_mx($domain)
     }
 }
 
-function generar_posibles_correos($nombre, $apellido, $dominio)
-{
+function generar_posibles_correos($nombre, $apellido, $dominio) {
     $posibles_correos = [];
 
     // Generar combinaciones básicas
@@ -92,8 +90,7 @@ function generar_posibles_correos($nombre, $apellido, $dominio)
     return array_slice($posibles_correos, 0, 10);  // Limitar a los primeros 10 posibles correos
 }
 
-function verificar_correos_validos($emails)
-{
+function verificar_correos_validos($emails) {
     // Usar array_map para verificar en paralelo (teórico, PHP no soporta threading real)
     $valid_email = null;
     foreach ($emails as $email) {
@@ -105,8 +102,7 @@ function verificar_correos_validos($emails)
     return $valid_email;
 }
 
-function verificar_correo_puede_recibir($email)
-{
+function verificar_correo_puede_recibir($email) {
     $domain = substr(strrchr($email, "@"), 1);
 
     // Verificar si el dominio tiene registros MX
@@ -123,21 +119,13 @@ function verificar_correo_puede_recibir($email)
     foreach ($records as $mx) {
         $mx_server = $mx['target'];
         try {
-            // Usar stream_socket_client con tiempo de espera reducido y contexto
-            $context = stream_context_create([
-                'socket' => [
-                    'tcp_nodelay' => true, // Deshabilitar Nagle's algorithm
-                    'so_timeout' => 10 // Timeout más largo para conexiones más estables
-                ]
-            ]);
-
-            $connection = @stream_socket_client("tcp://$mx_server:25", $errno, $errstr, 10, STREAM_CLIENT_CONNECT, $context);
+            // Usar fsockopen con tiempo de espera reducido
+            $connection = @fsockopen($mx_server, 25, $errno, $errstr, 5);
             if (!$connection) {
-                error_log("Error conectando a $mx_server: $errno - $errstr");
                 continue;
             }
 
-            stream_set_timeout($connection, 3); // Timeout de lectura reducido
+            stream_set_timeout($connection, 5); // Timeout de lectura reducido
             $response = fgets($connection, 1024);
 
             fwrite($connection, "HELO example.com\r\n");
@@ -157,7 +145,6 @@ function verificar_correo_puede_recibir($email)
                 return true;
             }
         } catch (Exception $e) {
-            error_log("Excepción capturada: " . $e->getMessage());
             continue;
         }
     }
@@ -186,3 +173,4 @@ if (isset($_GET['action']) && $_GET['action'] === 'download_csv') {
         echo "No hay datos para descargar.";
     }
 }
+?>
